@@ -1,266 +1,227 @@
 import { useState } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { BookOpen, Star, ExternalLink } from 'lucide-react'
-import { getRecommendations, createBookmark, getBookmarks } from '@/lib/api'
-import { RecommendItem } from '@/lib/types'
+import { useMutation } from '@tanstack/react-query'
+import { Search, BookOpen, TrendingUp } from 'lucide-react'
+import { api } from '@/lib/api'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
-import Badge from '@/components/ui/Badge'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import ErrorDisplay from '@/components/ErrorDisplay'
 
-export default function RecommendPage() {
-  const [topic, setTopic] = useState('')
-  const [level, setLevel] = useState<'beginner' | 'intermediate' | 'advanced'>(
-    'beginner'
-  )
-  const [purpose, setPurpose] = useState<'report' | 'study' | 'data' | 'api'>('study')
-  const [recommendations, setRecommendations] = useState<RecommendItem[]>([])
+interface TermSearchResult {
+  term: string
+  english: string
+  definition: string
+  similarity: number
+  similarity_percent: number
+}
 
-  const mutation = useMutation({
-    mutationFn: () =>
-      getRecommendations({
-        topic,
-        level,
-        purpose,
-      }),
-    onSuccess: (response) => {
-      setRecommendations(response.data.items)
+interface SearchResponse {
+  query: string
+  results: TermSearchResult[]
+  count: number
+}
+
+export default function RecommendPage() {
+  const [query, setQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<TermSearchResult[]>([])
+  const [lastQuery, setLastQuery] = useState('')
+
+  const searchMutation = useMutation({
+    mutationFn: async (searchQuery: string) => {
+      const response = await api.post<SearchResponse>('/term-search/', {
+        query: searchQuery,
+        top_k: 3,
+      })
+      return response.data
+    },
+    onSuccess: (data) => {
+      setSearchResults(data.results)
+      setLastQuery(data.query)
     },
   })
 
-  const bookmarkMutation = useMutation({
-    mutationFn: (item: RecommendItem) =>
-      createBookmark({
-        title: item.title,
-        url: item.url,
-        tags: item.tags,
-      }),
-  })
-
-  const { data: bookmarksData } = useQuery({
-    queryKey: ['bookmarks'],
-    queryFn: async () => (await getBookmarks()).data,
-  })
-
-  const handleSubmit = () => {
-    if (!topic.trim()) return
-    mutation.mutate()
+  const handleSearch = () => {
+    if (!query.trim()) return
+    searchMutation.mutate(query)
   }
 
-  const handleBookmark = (item: RecommendItem) => {
-    bookmarkMutation.mutate(item)
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch()
+    }
+  }
+
+  const getSimilarityColor = (percent: number) => {
+    if (percent >= 80) return 'text-emerald-400'
+    if (percent >= 60) return 'text-yellow-400'
+    return 'text-slate-light'
+  }
+
+  const getSimilarityBg = (percent: number) => {
+    if (percent >= 80) return 'bg-emerald-500/20 border-emerald-500/30'
+    if (percent >= 60) return 'bg-yellow-500/20 border-yellow-500/30'
+    return 'bg-slate-700/20 border-slate-600/30'
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 animation-fade-in">
+    <div className="max-w-5xl mx-auto space-y-6 animation-fade-in">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-tight font-bold mb-2">자료 추천</h1>
-        <p className="text-slate">학습 목적에 맞는 경제 자료를 추천받으세요</p>
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-tight font-bold mb-3 flex items-center justify-center">
+          <BookOpen className="h-9 w-9 mr-3 text-gold" />
+          경제 용어 검색
+        </h1>
+        <p className="text-slate-light text-lg">
+          궁금한 경제 용어를 검색하고 AI가 찾아드립니다
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Form */}
-        <div className="lg:col-span-1 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <BookOpen className="h-5 w-5 mr-2 text-gold" />
-                추천 설정
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Topic */}
-              <div>
-                <label className="block text-sm font-medium text-slate-light mb-2">
-                  주제
-                </label>
-                <Input
-                  placeholder="예: GDP, 인플레이션, 금리"
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                />
-              </div>
+      {/* Search Input */}
+      <Card className="border-2 border-gold/30 shadow-lg">
+        <CardContent className="p-6">
+          <div className="flex gap-3">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-light" />
+              <Input
+                placeholder="예: 인플레이션이란?, GDP 의미, 금리 설명..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="pl-11 h-12 text-base"
+                disabled={searchMutation.isPending}
+              />
+            </div>
+            <Button
+              onClick={handleSearch}
+              disabled={searchMutation.isPending || !query.trim()}
+              className="h-12 px-8"
+              size="lg"
+            >
+              {searchMutation.isPending ? '검색 중...' : '검색'}
+            </Button>
+          </div>
 
-              {/* Level */}
-              <div>
-                <label className="block text-sm font-medium text-slate-light mb-2">
-                  수준
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { value: 'beginner', label: '입문' },
-                    { value: 'intermediate', label: '중급' },
-                    { value: 'advanced', label: '고급' },
-                  ].map((opt) => (
-                    <Button
-                      key={opt.value}
-                      size="sm"
-                      variant={level === opt.value ? 'default' : 'outline'}
-                      onClick={() => setLevel(opt.value as any)}
-                    >
-                      {opt.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+          {/* Examples */}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <span className="text-sm text-slate-light">💡 추천 검색:</span>
+            {['인플레이션이란?', 'GDP 의미', '금리 설명', '환율 정의'].map(
+              (example) => (
+                <button
+                  key={example}
+                  onClick={() => {
+                    setQuery(example)
+                    searchMutation.mutate(example)
+                  }}
+                  className="text-xs px-3 py-1 rounded-full bg-noir-bg border border-slate-dark hover:border-gold/50 text-slate-light hover:text-gold transition-colors"
+                  disabled={searchMutation.isPending}
+                >
+                  {example}
+                </button>
+              )
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-              {/* Purpose */}
-              <div>
-                <label className="block text-sm font-medium text-slate-light mb-2">
-                  목적
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { value: 'report', label: '리포트' },
-                    { value: 'study', label: '학습' },
-                    { value: 'data', label: '데이터' },
-                    { value: 'api', label: 'API' },
-                  ].map((opt) => (
-                    <Button
-                      key={opt.value}
-                      size="sm"
-                      variant={purpose === opt.value ? 'default' : 'outline'}
-                      onClick={() => setPurpose(opt.value as any)}
-                    >
-                      {opt.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+      {/* Loading State */}
+      {searchMutation.isPending && (
+        <LoadingSpinner text="AI가 관련 경제 용어를 검색하고 있습니다..." />
+      )}
 
-              <Button
-                className="w-full"
-                onClick={handleSubmit}
-                disabled={mutation.isPending || !topic.trim()}
+      {/* Error State */}
+      {searchMutation.error && (
+        <ErrorDisplay
+          message={(searchMutation.error as any).message}
+          onRetry={handleSearch}
+        />
+      )}
+
+      {/* Search Results */}
+      {searchResults.length > 0 && !searchMutation.isPending && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-tight font-bold flex items-center">
+              <TrendingUp className="h-6 w-6 mr-2 text-gold" />
+              검색 결과
+            </h2>
+            <span className="text-slate-light text-sm">
+              "{lastQuery}" 검색 결과 {searchResults.length}개
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            {searchResults.map((result, idx) => (
+              <Card
+                key={idx}
+                className={`border-2 hover:shadow-xl transition-all group ${getSimilarityBg(
+                  result.similarity_percent
+                )}`}
               >
-                {mutation.isPending ? '추천 중...' : '자료 추천받기'}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Bookmarks */}
-          {bookmarksData && bookmarksData.bookmarks.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center text-base">
-                  <Star className="h-4 w-4 mr-2 text-gold" />
-                  즐겨찾기 ({bookmarksData.bookmarks.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {bookmarksData.bookmarks.slice(0, 5).map((bookmark: any) => (
-                    <a
-                      key={bookmark.id}
-                      href={bookmark.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block p-2 rounded hover:bg-noir-bg transition-colors"
-                    >
-                      <p className="text-sm text-white hover:text-gold transition-colors line-clamp-1">
-                        {bookmark.title}
-                      </p>
-                    </a>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Right: Results */}
-        <div className="lg:col-span-2 space-y-4">
-          {mutation.isPending && <LoadingSpinner text="자료를 추천하고 있습니다..." />}
-
-          {mutation.error && (
-            <ErrorDisplay
-              message={mutation.error.message}
-              onRetry={handleSubmit}
-            />
-          )}
-
-          {recommendations.length > 0 && (
-            <>
-              <h2 className="text-xl font-tight font-semibold">
-                추천 자료 ({recommendations.length}개)
-              </h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {recommendations.map((item, idx) => (
-                  <Card
-                    key={idx}
-                    className="hover:border-gold/50 transition-all group"
-                  >
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-gold transition-colors">
-                            {item.title}
-                          </h3>
-                          <p className="text-sm text-slate-light mb-3 line-clamp-3">
-                            {item.summary}
+                <CardContent className="p-6">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gold/20 text-gold font-bold text-lg">
+                        {idx + 1}
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-white group-hover:text-gold transition-colors">
+                          {result.term}
+                        </h3>
+                        {result.english && (
+                          <p className="text-sm text-slate-light mt-1">
+                            {result.english}
                           </p>
-                        </div>
+                        )}
                       </div>
+                    </div>
 
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {item.tags.map((tag, tagIdx) => (
-                          <Badge key={tagIdx} variant="secondary">
-                            {tag}
-                          </Badge>
-                        ))}
+                    {/* Similarity Badge */}
+                    <div
+                      className={`flex flex-col items-end ${getSimilarityColor(
+                        result.similarity_percent
+                      )}`}
+                    >
+                      <div className="text-3xl font-bold">
+                        {result.similarity_percent.toFixed(1)}%
                       </div>
+                      <div className="text-xs text-slate-light">유사도</div>
+                    </div>
+                  </div>
 
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1"
-                          onClick={() => window.open(item.url, '_blank')}
-                        >
-                          <ExternalLink className="h-3 w-3 mr-1" />
-                          바로가기
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleBookmark(item)}
-                          disabled={bookmarkMutation.isPending}
-                        >
-                          <Star
-                            className={`h-4 w-4 ${
-                              bookmarkMutation.isSuccess
-                                ? 'fill-gold text-gold'
-                                : ''
-                            }`}
-                          />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </>
-          )}
-
-          {!mutation.isPending &&
-            !mutation.error &&
-            recommendations.length === 0 && (
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <BookOpen className="h-16 w-16 text-slate-dark mx-auto mb-4" />
-                  <p className="text-slate">
-                    주제를 입력하고 "자료 추천받기"를 클릭하세요
-                  </p>
+                  {/* Definition */}
+                  <div className="relative">
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-gold/50 rounded-full"></div>
+                    <p className="text-slate-light leading-relaxed pl-4 text-base">
+                      {result.definition}
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
-            )}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Empty State */}
+      {!searchMutation.isPending &&
+        !searchMutation.error &&
+        searchResults.length === 0 && (
+          <Card>
+            <CardContent className="p-16 text-center">
+              <Search className="h-20 w-20 text-slate-dark mx-auto mb-6" />
+              <h3 className="text-xl font-semibold text-white mb-2">
+                경제 용어를 검색해보세요
+              </h3>
+              <p className="text-slate-light">
+                위 검색창에 궁금한 경제 용어를 입력하면
+                <br />
+                AI가 가장 관련성 높은 용어를 찾아드립니다
+              </p>
+            </CardContent>
+          </Card>
+        )}
     </div>
   )
 }
-

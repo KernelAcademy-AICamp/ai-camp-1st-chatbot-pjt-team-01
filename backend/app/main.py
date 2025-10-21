@@ -2,10 +2,23 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 
 load_dotenv()
 
+# DB 연결 초기화
+from app.db.mongo import connect_to_mongo, close_mongo_connection
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    await connect_to_mongo()
+    yield
+    # Shutdown
+    await close_mongo_connection()
+
 app = FastAPI(
+    lifespan=lifespan,
     title="Econ Assist Bot API",
     description="""
     경제학 문제 생성 및 채점 시스템 API
@@ -61,7 +74,7 @@ app.add_middleware(
 )
 
 # 라우터 등록
-from app.routers import health, qa, problems, recommend, market, quiz, demo
+from app.routers import health, qa, problems, recommend, market, quiz, demo, term_search
 app.include_router(health.router, prefix="/api")
 app.include_router(qa.router, prefix="/api")
 app.include_router(problems.router, prefix="/api")
@@ -69,6 +82,7 @@ app.include_router(recommend.router, prefix="/api")
 app.include_router(market.router, prefix="/api")
 app.include_router(quiz.router, prefix="/api")
 app.include_router(demo.router, prefix="/api")
+app.include_router(term_search.router, prefix="/api")
 
 @app.get("/")
 async def root():

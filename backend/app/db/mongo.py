@@ -13,7 +13,10 @@ mongo = MongoDB()
 async def connect_to_mongo():
     """MongoDB 연결 초기화"""
     try:
-        mongo.client = AsyncIOMotorClient(settings.MONGO_URI)
+        mongo.client = AsyncIOMotorClient(
+            settings.MONGO_URI,
+            tlsAllowInvalidCertificates=True
+        )
         mongo.db = mongo.client[settings.MONGO_DB]
         # 연결 테스트
         await mongo.client.admin.command('ping')
