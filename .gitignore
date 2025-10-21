@@ -67,4 +67,3 @@ backend/data/json/
 backend/test_*.py
 backend/clear_mongodb.py
 backend/check_*.py
-

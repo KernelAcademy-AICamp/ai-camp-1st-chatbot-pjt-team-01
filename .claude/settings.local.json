@@ -12,7 +12,10 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git remote add:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []
