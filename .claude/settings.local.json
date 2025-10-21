@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(pip install:*)",
+      "Bash(curl -X POST http://localhost:8000/api/qa/chat -H \"Content-Type: application/json\" -d \"{\"\"question\"\": \"\"GDP가 뭐야?\"\", \"\"context\"\": null}\")",
+      "Bash(python test_openai_connection.py:*)",
+      "Bash(git reset:*)",
+      "Read(//c/Users/NWPark-LenovoLaptop/OneDrive/python/AI/프로젝트/**)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git remote add:*)",
+      "Bash(git fetch:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

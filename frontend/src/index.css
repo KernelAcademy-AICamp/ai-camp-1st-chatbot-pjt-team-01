@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-noir-border;
+  }
+  
+  body {
+    @apply bg-noir-bg text-slate-light font-sans antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-tight tracking-tight text-white;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .animation-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-noir-bg;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-noir-border rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-dark;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Prevent layout shift during scroll */
+* {
+  box-sizing: border-box;
+}
+
+/* Ensure proper scrolling behavior */
+.overflow-y-auto {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(55 65 81) transparent;
+}
+
+/* Responsive layout improvements */
+@media (min-width: 1024px) {
+  .max-w-none {
+    max-width: 100% !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  .max-w-none {
+    max-width: 100% !important;
+  }
+}
+
+@media (min-width: 1536px) {
+  .max-w-none {
+    max-width: 100% !important;
+  }
+}
+
+/* Force full width for quiz pages */
+.quiz-container {
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+/* Ensure no max-width constraints */
+.no-max-width {
+  max-width: none !important;
+}
+
+/* Override any container constraints */
+.quiz-container * {
+  max-width: none !important;
+}
+
+/* Force full width for quiz cards */
+.quiz-container .max-w-none {
+  max-width: none !important;
+  width: 100% !important;
+}
+

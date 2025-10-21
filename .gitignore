@@ -1,0 +1,70 @@
+# MD
+CLAUDE.md
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+.pnpm-store/
+
+# Environment - API Keys 및 민감한 정보
+.env
+.env.local
+.env.*.local
+backend/.env
+
+# .env.example은 Git에 포함되어야 하므로 제외하지 않음
+!.env.example
+!backend/.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+coverage/
+*.coverage
+htmlcov/
+
+# Logs
+*.log
+logs/
+
+# Docker
+.dockerignore
+
+# 프로젝트 특화 - 업로드된 파일 및 데이터
+backend/uploads/
+backend/data/json/
+*.pdf
+*.docx
+*.doc
+
+# 임시 파일
+backend/test_*.py
+backend/clear_mongodb.py
+backend/check_*.py
+
